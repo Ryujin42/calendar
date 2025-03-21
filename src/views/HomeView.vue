@@ -76,4 +76,16 @@ button:hover {
   list-style: none;
   padding: 0;
 }
+
+@media (max-width: 768px) {
+  .event-form {
+    width: 100%;
+  }
+  input, button {
+    width: 100%;
+  }
+  .title {
+    font-size: 1.2rem;
+  }
+}
 </style>
