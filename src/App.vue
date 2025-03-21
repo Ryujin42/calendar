@@ -1,47 +1,38 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
+// src/App.vue
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <div>
+    <header class="app-header">
+      <h1>Agenda d’événements sobres</h1>
+      <router-link to="/calendar" class="calendar-btn">📅 Voir le Calendrier</router-link>
+    </header>
+    <main>
+      <router-view />
+    </main>
+  </div>
 </template>
 
+<script setup lang="ts">
+import { RouterView, RouterLink } from 'vue-router';
+</script>
+
 <style scoped>
-header {
-  line-height: 1.5;
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #2c3e50;
+  color: white;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.calendar-btn {
+  background: #2c974b;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  text-decoration: none;
 }
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.calendar-btn:hover {
+  background: #247f3d;
 }
 </style>
