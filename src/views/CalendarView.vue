@@ -10,19 +10,30 @@
         <button @click="goToday" class="today-btn">Aujourd’hui</button>
       </div>
     </div>
-    <FullCalendar ref="calendarRef" :options="calendarOptions" class="calendar" @datesSet="updateCurrentMonthYear"/>
+    <FullCalendar ref="calendarRef" :options="calendarOptions" class="calendar" @datesSet="updateCurrentMonthYear" />
+
+    <div v-if="selectedEvent" class="modal-overlay" @click.self="selectedEvent = null">
+      <div class="modal">
+        <h3>{{ selectedEvent.title }}</h3>
+        <p><strong>Date :</strong> {{ formatDate(selectedEvent.start) }}</p>
+        <p><strong>Lieu :</strong> {{ selectedEvent.location || 'Non précisé' }}</p>
+        <button class="close-btn" @click="selectedEvent = null">Fermer</button>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import type { EventClickArg } from '@fullcalendar/core';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { fetchEvents } from '@/services/eventServices';
 
-const events = ref<{ title: string; start: string }[]>([]);
+const events = ref<{ title: string; start: string; location?: string }[]>([]);
 const calendarRef = ref();
+const selectedEvent = ref<{ title: string; start: string; location?: string } | null>(null);
 
 const calendarOptions = ref({
   plugins: [dayGridPlugin, interactionPlugin],
@@ -32,6 +43,10 @@ const calendarOptions = ref({
     left: '',
     center: '',
     right: '',
+  },
+  eventClick: (info: EventClickArg) => {
+    const clicked = events.value.find(e => e.title === info.event.title && e.start === info.event.startStr);
+    selectedEvent.value = clicked || null;
   }
 });
 
@@ -48,20 +63,22 @@ const prevMonth = () => {
   calendarRef.value.getApi().prev();
   updateCurrentMonthYear();
 };
-
 const nextMonth = () => {
   calendarRef.value.getApi().next();
   updateCurrentMonthYear();
 };
-
 const goToday = () => {
   calendarRef.value.getApi().today();
   updateCurrentMonthYear();
 };
 
+const formatDate = (dateStr: string) => {
+  return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(dateStr));
+};
+
 onMounted(async () => {
   const eventList = await fetchEvents();
-  events.value = eventList.map(e => ({ title: e.title, start: e.date }));
+  events.value = eventList.map(e => ({ title: e.title, start: e.date, location: e.location }));
   updateCurrentMonthYear();
 });
 </script>
@@ -143,6 +160,52 @@ onMounted(async () => {
 .calendar {
   width: 100%;
   max-width: 400px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.modal h3 {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+
+.modal p {
+  margin: 6px 0;
+  font-size: 1rem;
+}
+
+.close-btn {
+  margin-top: 15px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  background: #2c974b;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.close-btn:hover {
+  background: #247f3d;
 }
 
 @media (max-width: 768px) {

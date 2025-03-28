@@ -1,8 +1,9 @@
 <template>
   <div class="app-container">
     <header v-if="$route.path !== '/calendar'" class="app-header">
-      <h1 class="title">Agenda d’événements sobres</h1>
-      <router-link to="/calendar" class="calendar-btn">📅 Voir le Calendrier</router-link>
+      <div class="calendar-btn-container">
+        <router-link to="/calendar" class="calendar-btn">📅 Voir le Calendrier</router-link>
+      </div>
     </header>
     <main class="content">
       <router-view />
@@ -28,37 +29,35 @@ const $route = useRoute();
 
 .app-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 10px 15px;
+  padding: 20px;
   background: #2c3e50;
   color: white;
   width: 100%;
-  max-width: 300px;
+  max-width: 650px;
   border-radius: 10px;
-  position: relative;
+  height: 100px;
+  margin-bottom: 20px;
 }
 
-.title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 0;
-  flex: 1;
-  text-align: center;
+.calendar-btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
 .calendar-btn {
   background: #2c974b;
   color: white;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 10px 16px;
+  border-radius: 6px;
   text-decoration: none;
-  text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
 }
 
 .calendar-btn:hover {
@@ -70,28 +69,27 @@ const $route = useRoute();
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 500px;
-  margin-top: 20px;
+  max-width: 650px;
   background: white;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 25px;
+  border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
-    text-align: center;
     gap: 10px;
     padding: 15px;
-  }
-  .title {
-    font-size: 1.2rem;
+    height: auto;
   }
   .calendar-btn {
-    width: auto;
-    font-size: 0.8rem;
-    padding: 6px 10px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+  .content {
+    width: 90%;
+    padding: 20px;
   }
 }
 </style>
