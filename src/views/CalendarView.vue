@@ -2,6 +2,7 @@
   <section class="calendar-container">
     <h2 class="title">Calendrier des événements</h2>
     <router-link to="/" class="create-event-btn">➕ Ajouter un événement</router-link>
+
     <div class="calendar-header">
       <span class="calendar-title">{{ currentMonthYear }}</span>
       <div class="calendar-controls">
@@ -10,12 +11,18 @@
         <button @click="goToday" class="today-btn">Aujourd’hui</button>
       </div>
     </div>
-    <FullCalendar ref="calendarRef" :options="calendarOptions" class="calendar" @datesSet="updateCurrentMonthYear" />
+
+    <FullCalendar
+      ref="calendarRef"
+      class="calendar"
+      :options="calendarOptions"
+      @datesSet="updateCurrentMonthYear"
+    />
 
     <div v-if="selectedEvent" class="modal-overlay" @click.self="selectedEvent = null">
       <div class="modal">
         <h3>{{ selectedEvent.title }}</h3>
-        <p><strong>Date :</strong> {{ formatDate(selectedEvent.start) }}</p>
+        <p><strong>Date :</strong> {{ formatDate(selectedEvent.date) }}</p>
         <p><strong>Lieu :</strong> {{ selectedEvent.location || 'Non précisé' }}</p>
         <button class="close-btn" @click="selectedEvent = null">Fermer</button>
       </div>
@@ -24,126 +31,138 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import type { EventClickArg } from '@fullcalendar/core';
-import FullCalendar from '@fullcalendar/vue3';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import { fetchEvents } from '@/services/eventServices';
+import { ref, onMounted } from 'vue'
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import type { EventClickArg } from '@fullcalendar/core'
+import { fetchEvents, fetchEventById } from '@/services/eventServices'
 
-const events = ref<{ title: string; start: string; location?: string }[]>([]);
-const calendarRef = ref();
-const selectedEvent = ref<{ title: string; start: string; location?: string } | null>(null);
+const events = ref<{ id: string; title: string; start: string }[]>([])
+const calendarRef = ref()
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  location?: string;
+}
+
+const selectedEvent = ref<Event | null>(null)
+const currentMonthYear = ref('')
 
 const calendarOptions = ref({
   plugins: [dayGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
+  headerToolbar: false as const,
   events: events,
-  headerToolbar: {
-    left: '',
-    center: '',
-    right: '',
+  eventClick: async (info: EventClickArg) => {
+    try {
+      const id = info.event.id
+      const fullEvent = await fetchEventById(id)
+      selectedEvent.value = { ...fullEvent, id: fullEvent.id.toString() }
+    } catch (err) {
+      console.error('Erreur lors de la récupération de l’événement', err)
+    }
   },
-  eventClick: (info: EventClickArg) => {
-    const clicked = events.value.find(e => e.title === info.event.title && e.start === info.event.startStr);
-    selectedEvent.value = clicked || null;
-  }
-});
-
-const currentMonthYear = ref('');
+})
 
 const updateCurrentMonthYear = () => {
-  if (!calendarRef.value) return;
-  const calendarApi = calendarRef.value.getApi();
-  const date = calendarApi.getDate();
-  currentMonthYear.value = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(date);
-};
+  const date = calendarRef.value.getApi().getDate()
+  currentMonthYear.value = new Intl.DateTimeFormat('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
 
 const prevMonth = () => {
-  calendarRef.value.getApi().prev();
-  updateCurrentMonthYear();
-};
+  calendarRef.value.getApi().prev()
+  updateCurrentMonthYear()
+}
 const nextMonth = () => {
-  calendarRef.value.getApi().next();
-  updateCurrentMonthYear();
-};
+  calendarRef.value.getApi().next()
+  updateCurrentMonthYear()
+}
 const goToday = () => {
-  calendarRef.value.getApi().today();
-  updateCurrentMonthYear();
-};
+  calendarRef.value.getApi().today()
+  updateCurrentMonthYear()
+}
 
 const formatDate = (dateStr: string) => {
-  return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(dateStr));
-};
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(dateStr))
+}
 
 onMounted(async () => {
-  const eventList = await fetchEvents();
-  events.value = eventList.map(e => ({ title: e.title, start: e.date, location: e.location }));
-  updateCurrentMonthYear();
-});
+  const res = await fetchEvents()
+  events.value = res.map(e => ({
+    id: e.id.toString(),
+    title: e.title,
+    start: e.date,
+  }))
+  updateCurrentMonthYear()
+})
 </script>
 
 <style scoped>
 .calendar-container {
-  max-width: 500px;
+  max-width: 800px;
   margin: 40px auto;
   padding: 20px;
   background: white;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .title {
   text-align: center;
   font-size: 1.6rem;
-  font-weight: bold;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .create-event-btn {
   display: block;
-  width: 90%;
-  max-width: 250px;
-  margin-bottom: 20px;
+  margin: 0 auto 20px;
+  max-width: 300px;
   background: #007bff;
   color: white;
-  padding: 12px 16px;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 1rem;
+  padding: 12px 18px;
+  border-radius: 8px;
   text-align: center;
-  transition: background-color 0.3s;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
 }
+
 .create-event-btn:hover {
   background: #0056b3;
 }
 
 .calendar-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  text-align: center;
   margin-bottom: 15px;
 }
 
 .calendar-title {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: bold;
   margin-bottom: 10px;
 }
 
 .calendar-controls {
   display: flex;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
 }
 
 .nav-btn, .today-btn {
-  padding: 8px 12px;
-  font-size: 1rem;
+  padding: 8px 14px;
+  font-size: 0.9rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   background: #2c3e50;
   color: white;
   cursor: pointer;
@@ -154,12 +173,11 @@ onMounted(async () => {
 }
 
 .nav-btn:hover, .today-btn:hover {
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .calendar {
-  width: 100%;
-  max-width: 400px;
+  margin-top: 20px;
 }
 
 .modal-overlay {
@@ -172,38 +190,39 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 999;
 }
 
 .modal {
   background: white;
-  padding: 20px;
+  padding: 24px;
   border-radius: 10px;
-  max-width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 
 .modal h3 {
   font-size: 1.4rem;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .modal p {
   margin: 6px 0;
-  font-size: 1rem;
 }
 
 .close-btn {
   margin-top: 15px;
-  padding: 8px 14px;
-  font-size: 0.9rem;
+  padding: 10px 16px;
+  font-size: 0.95rem;
   background: #2c974b;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
 }
+
 .close-btn:hover {
   background: #247f3d;
 }
@@ -211,29 +230,18 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .calendar-container {
     width: 90%;
-    padding: 15px;
+    padding: 16px;
   }
   .title {
     font-size: 1.4rem;
   }
-  .create-event-btn {
-    width: 100%;
-  }
-  .calendar-header {
-    width: 100%;
-    text-align: center;
-  }
   .calendar-controls {
     flex-direction: row;
-    justify-content: center;
-    gap: 5px;
+    gap: 6px;
   }
   .nav-btn, .today-btn {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding: 6px 10px;
-  }
-  .fc-header-toolbar {
-    display: none;
   }
 }
 </style>

@@ -2,25 +2,42 @@ import type { Event } from '@/models/Event'
 
 const API_URL = 'http://zepplinium.com:3000/event'
 
-export async function fetchEvents(): Promise<Event[]> {
-  const res = await fetch(API_URL)
+type ApiEvent = {
+  id: string;
+  name: string;
+  date: string;
+  lieu: string;
+};
 
-  if (!res.ok) throw new Error('Erreur lors de la récupération des événements')
-  const json = await res.json()
-
-  type ApiEvent = {
-    id: string;
-    name: string;
-    date: string;
-    lieu: string;
-  };
-
-  return json.map((e: ApiEvent) => ({
-    id: e.id,
+function transformToClient(e: ApiEvent): Event {
+  return {
+    id: Number(e.id),
     title: e.name,
     date: e.date,
     location: e.lieu,
-  }))
+  };
+}
+
+export async function fetchEvents(): Promise<Event[]> {
+  const res = await fetch(API_URL);
+
+  if (!res.ok) {
+    throw new Error('Erreur lors de la récupération des événements');
+  }
+
+  const json: ApiEvent[] = await res.json();
+  return json.map(transformToClient);
+}
+
+export async function fetchEventById(id: string): Promise<Event> {
+  const res = await fetch(`${API_URL}/${id}`);
+
+  if (!res.ok) {
+    throw new Error(`Impossible de récupérer l’événement ${id}`);
+  }
+
+  const json: ApiEvent = await res.json();
+  return transformToClient(json);
 }
 
 export async function createEvent(data: Omit<Event, 'id'>): Promise<Event> {
@@ -34,31 +51,16 @@ export async function createEvent(data: Omit<Event, 'id'>): Promise<Event> {
         lieu: data.location,
       },
     }),
-  })
+  });
 
-  if (!res.ok) throw new Error('Erreur lors de la création de l’événement')
+  const text = await res.text();
+  console.log('Réponse brute:', text);
 
-  const json = await res.json()
-
-  return {
-    id: json.id,
-    title: json.name,
-    date: json.date,
-    location: json.lieu,
+  if (!res.ok) {
+    console.error('Status:', res.status);
+    throw new Error('Erreur lors de la création de l’événement');
   }
-}
 
-export async function fetchEventById(id: string): Promise<Event> {
-  const res = await fetch(`${API_URL}/${id}`)
-
-  if (!res.ok) throw new Error(`Impossible de récupérer l’événement ${id}`)
-
-  const json = await res.json()
-
-  return {
-    id: json.id,
-    title: json.name,
-    date: json.date,
-    location: json.lieu,
-  }
+  const json: ApiEvent = JSON.parse(text);
+  return transformToClient(json);
 }
