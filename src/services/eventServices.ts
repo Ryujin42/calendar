@@ -1,9 +1,10 @@
 import type { Event } from '@/models/Event'
 
-const API_URL = 'http://localhost:3000/event'
+const API_URL = 'http://zepplinium.com:3000/event'
 
 export async function fetchEvents(): Promise<Event[]> {
   const res = await fetch(API_URL)
+
   if (!res.ok) throw new Error('Erreur lors de la récupération des événements')
   const json = await res.json()
 
@@ -36,6 +37,21 @@ export async function createEvent(data: Omit<Event, 'id'>): Promise<Event> {
   })
 
   if (!res.ok) throw new Error('Erreur lors de la création de l’événement')
+
+  const json = await res.json()
+
+  return {
+    id: json.id,
+    title: json.name,
+    date: json.date,
+    location: json.lieu,
+  }
+}
+
+export async function fetchEventById(id: string): Promise<Event> {
+  const res = await fetch(`${API_URL}/${id}`)
+
+  if (!res.ok) throw new Error(`Impossible de récupérer l’événement ${id}`)
 
   const json = await res.json()
 
