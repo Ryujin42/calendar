@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { fetchEvents, postEvent } from '@/services/eventServices';
+import { createEvent, fetchEvents } from '@/services/eventServices';
 import EventItem from '@/components/EventItem.vue';
 import type { Event } from '@/models/Event';
 
@@ -31,9 +31,19 @@ const sortedEvents = computed(() =>
 );
 
 const addEvent = async () => {
-  const newEvent = await postEvent(form.value);
-  events.value.push(newEvent);
-  form.value = { title: '', date: '', location: '' };
+  try {
+    const newEvent = await createEvent(form.value);
+    events.value.push({
+      id: newEvent.id,
+      title: newEvent.title,
+      date: newEvent.date,
+      location: newEvent.location,
+    });
+    form.value = { title: '', date: '', location: '' };
+  } catch (err) {
+    console.error('Erreur POST', err);
+    alert('Erreur lors de l’ajout de l’événement');
+  }
 };
 
 onMounted(async () => {
